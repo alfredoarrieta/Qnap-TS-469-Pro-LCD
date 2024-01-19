@@ -111,7 +111,7 @@ LCD_ID=0
 # message settings
 # MSG_TIMEOUT => timeout between the message blocks (default: 5), "0" (without quotes) to disable message auto-cycling
 #
-MSG_TIMEOUT=0
+MSG_TIMEOUT=3
 MSG_FILLER=" "
 MSG_RT=0
 MSG_ID=0
