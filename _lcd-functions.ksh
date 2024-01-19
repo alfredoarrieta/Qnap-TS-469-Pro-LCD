@@ -56,11 +56,42 @@ INDEX=${#ROW[@]}
 HOST="$(hostname -s)"
 IP1=$(ifconfig em0 | grep "inet " | cut -f 2 -d " " | grep -v "127.0.")
 IP2=$(ifconfig em1 | grep "inet " | cut -f 2 -d " " | grep -v "127.0.")
-IP2_LAST_DIGIT=(${IP2//./ })
+IP1_RESULT=""
+IP1_NUMBER=0
+for IP1_PARTIAL in $IP1; do
+	echo "IP1: $IP1_PARTIAL"
+	IP1_LAST_DIGIT=(${IP1_PARTIAL//./ })
+	IP1_RESULT="${IP1_RESULT}${IP1_LAST_DIGIT[3]}|"
+	((IP1_NUMBER++))
+	done
+echo "IP1_RESULT: ${IP1_RESULT}"
+IP2_RESULT=""
+IP2_NUMBER=0
+for IP2_PARTIAL in $IP2; do
+	echo "IP2: $IP2_PARTIAL"
+	IP2_LAST_DIGIT=(${IP2_PARTIAL//./ })
+	if [[ $IP1_RESULT != *"${IP2_LAST_DIGIT[3]}"* ]]
+	then
+		IP2_RESULT="${IP2_RESULT}${IP2_LAST_DIGIT[3]}|"
+		((IP2_NUMBER++))
+	else
+		echo "Repeated IP Ignored ${IP2_LAST_DIGIT[3]}"
+	fi
+	done
+echo "IP2_RESULT: ${IP2_RESULT}"
 # result
 ROW[${INDEX}]="${HOST}"
 (( INDEX ++ ))
-ROW[${INDEX}]="${IP1}/${IP2_LAST_DIGIT[3]}"
+echo "IP1_NNUMBER: ${IP1_NUMBER} IP2_NNUMBER: ${IP2_NUMBER}"
+if [ $IP1_NUMBER == 1 -a $IP2_NUMBER == 1 ]
+then
+	echo "Final IP: ${IP1}/${IP2_RESULT}"
+	echo ""
+	ROW[${INDEX}]="${IP1}/${IP2_RESULT}"
+else
+	echo "Final IP: ${IP1_RESULT}${IP2_RESULT}"
+	ROW[${INDEX}]="${IP1_RESULT}${IP2_RESULT}"
+fi
 
 #-------------------------------------------------------------------------------
 # 2. os/kernel
@@ -112,28 +143,22 @@ then
 	PREV_IDLE=0
 	POOL_NAME="$(zpool list -H | cut -f 1 )"
 	POOL_NAME_CUTTED=${POOL_NAME%$'\n'*}
-	echo "pool name:"
-	echo "${POOL_NAME_CUTTED}"
+	echo "pool name: ${POOL_NAME_CUTTED}"
 	FREE=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 4)
-	echo "free:"
-	echo "${FREE[0]}"
+	echo "free: ${FREE[0]}"
 	HEALTH=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 10)
-	echo "health:"
-	echo "${HEALTH[0]}"
+	echo "health: ${HEALTH[0]}"
 	CAP=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 8)
-	echo "capacity:"
-	echo "${CAP[0]}"
+	echo "capacity: ${CAP[0]}"
 	SIZE=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 2)
-	echo "size:"
-	echo "${SIZE[0]}"
+	echo "size: ${SIZE[0]}"
 	# result
 	ROW[${INDEX}]="$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 1)"
 	(( INDEX ++ ))
 	ROW[${INDEX}]="${FREE}/${SIZE}"
 	(( INDEX ++ ))
 	R_DEVICES=$(ls -l /dev/ada[0-9] | awk '{print$9}')
-	echo "devices:"
-	echo $R_DEVICES
+	#echo "devices: ${R_DEVICES}"
 fi
 
 #-------------------------------------------------------------------------------
@@ -148,13 +173,11 @@ if [ "$R_DEVICES" != "" ]; then
 	DEVICES="${R_DEVICES}"
         DRIVE_TEMPS=""
 	for DEVICE in $DEVICES; do
-		echo "device:"
-  		echo "$DEVICE"
 		INDIVIDUAL_TEMP=$(smartctl -A $DEVICE | grep Temperature_Celsius | awk '{print$10}')
+		echo "device: ${DEVICE} temp: ${INDIVIDUAL_TEMP}"
 		DRIVE_TEMPS="${DRIVE_TEMPS}${INDIVIDUAL_TEMP} "
 	done
-	echo "temps:"
-	echo $DRIVE_TEMPS
+	echo "temps: ${DRIVE_TEMPS}"
 	# result
 	ROW[${INDEX}]="Drive Temps"
 	(( INDEX ++ ))

@@ -260,18 +260,8 @@ trap "f_trap_exit" 0 1 2 3 10 11 15
 # prepare serial communication (send & receive)
 #
 #"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
-"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
+
 if (( $? == 0 ))
 then
     LOG_MSG[0]="Info  => serial port initialized!"
