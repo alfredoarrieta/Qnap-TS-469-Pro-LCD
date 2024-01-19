@@ -50,14 +50,17 @@ set -A ROW
 #-------------------------------------------------------------------------------
 #
 # get current index count as start value
+echo "////////////////////////////////////////////"
 INDEX=${#ROW[@]}
 # query
 HOST="$(hostname -s)"
-IP=$(ifconfig igb1 | grep "inet " | cut -f 2 -d " " | grep -v "127.0.")
+IP1=$(ifconfig em0 | grep "inet " | cut -f 2 -d " " | grep -v "127.0.")
+IP2=$(ifconfig em1 | grep "inet " | cut -f 2 -d " " | grep -v "127.0.")
+IP2_LAST_DIGIT=(${IP2//./ })
 # result
 ROW[${INDEX}]="${HOST}"
 (( INDEX ++ ))
-ROW[${INDEX}]="${IP}"
+ROW[${INDEX}]="${IP1}/${IP2_LAST_DIGIT[3]}"
 
 #-------------------------------------------------------------------------------
 # 2. os/kernel
@@ -107,15 +110,29 @@ then
 	# query
 	PREV_TOTAL=0
 	PREV_IDLE=0
-	FREE=$(zpool list -H data | cut -f 4)
-	HEALTH=$(zpool list -H data | cut -f 10)
-	CAP=$(zpool list -H data | cut -f 8)
+	POOL_NAME="$(zpool list -H | cut -f 1 )"
+	POOL_NAME_CUTTED=${POOL_NAME%$'\n'*}
+	echo "pool name:"
+	echo "${POOL_NAME_CUTTED}"
+	FREE=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 4)
+	echo "free:"
+	echo "${FREE[0]}"
+	HEALTH=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 10)
+	echo "health:"
+	echo "${HEALTH[0]}"
+	CAP=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 8)
+	echo "capacity:"
+	echo "${CAP[0]}"
+	SIZE=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 2)
+	echo "size:"
+	echo "${SIZE[0]}"
 	# result
-	ROW[${INDEX}]="$(zpool list -H data | cut -f 1) $(zpool list -H data | cut -f 2)"
+	ROW[${INDEX}]="$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 1)"
 	(( INDEX ++ ))
-	ROW[${INDEX}]="$FREE $HEALTH"
+	ROW[${INDEX}]="${FREE}/${SIZE}"
 	(( INDEX ++ ))
 	R_DEVICES=$(ls -l /dev/ada[0-9] | awk '{print$9}')
+	echo "devices:"
 	echo $R_DEVICES
 fi
 
@@ -129,11 +146,19 @@ if [ "$R_DEVICES" != "" ]; then
 	INDEX=${#ROW[@]}
 	# query
 	DEVICES="${R_DEVICES}"
-	DRIVE_TEMPS=$(smartctl -A ${DEVICES} | grep Temperature_Celsius | awk '{print$10}')
+        DRIVE_TEMPS=""
+	for DEVICE in $DEVICES; do
+		echo "device:"
+  		echo "$DEVICE"
+		INDIVIDUAL_TEMP=$(smartctl -A $DEVICE | grep Temperature_Celsius | awk '{print$10}')
+		DRIVE_TEMPS="${DRIVE_TEMPS}${INDIVIDUAL_TEMP} "
+	done
+	echo "temps:"
+	echo $DRIVE_TEMPS
 	# result
 	ROW[${INDEX}]="Drive Temps"
 	(( INDEX ++ ))
-	ROW[${INDEX}]="$DRIVE_TEMPS"
+	ROW[${INDEX}]="${DRIVE_TEMPS}C"
 	(( INDEX ++ ))
 else
 	echo "No devices were found to probe for temperature !"

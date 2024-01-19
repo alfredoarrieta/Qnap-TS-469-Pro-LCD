@@ -79,10 +79,10 @@ TTY_MIN=0
 # INP_TIMEOUT => input refresh timeout in seconds (default: 60), "0" (without quotes) to disable input auto-refresh
 # INP_FD      => number of used file descriptor for named pipe (default: 5)
 #
-INP_DIR="."
+INP_DIR="/usr/local/bin/lcd/"
 INP_FILE="_lcd-functions.ksh"
 INP_PIPE="/var/run/lcd.pipe"
-INP_TIMEOUT=60
+INP_TIMEOUT=30
 INP_FD=5
 INP_BUFFER=""
 INP_RT=0
@@ -99,19 +99,19 @@ LCD_DEV="/dev/cuau1"
 LCD_BAUD=1200
 LCD_MAXROW=2
 LCD_MAXCOL=16
-LCD_TIMEOUT=300
-LCD_ON="M\x5E\x1"
-LCD_OFF="M\x5E\x0"
-LCD_CODE="M\x0C\x"
-LCD_CLEAR="M\x0D"
-LCD_RESET="M\xFF"
+LCD_TIMEOUT=0
+LCD_ON="\x4D\x5E\x01"
+LCD_OFF="\x4D\x5E\x00"
+LCD_CODE="\x4D\x0C\x"
+LCD_CLEAR="\x4D\x0D"
+LCD_RESET="\x4D\xFF"
 LCD_RT=0
 LCD_ID=0
 
 # message settings
 # MSG_TIMEOUT => timeout between the message blocks (default: 5), "0" (without quotes) to disable message auto-cycling
 #
-MSG_TIMEOUT=5
+MSG_TIMEOUT=0
 MSG_FILLER=" "
 MSG_RT=0
 MSG_ID=0
@@ -121,7 +121,7 @@ MSG_ID=0
 # LOG_FILE    => reference to logfile (default: lcd-control.log), keep it empty to write to stdout
 # LOG_HISTORY => delete logfiles older than n days (default: 5)
 #
-LOG_DIR="."
+LOG_DIR="/usr/local/bin/lcd/log"
 LOG_FILE="lcd-control.log"
 LOG_HISTORY=5
 LOG_COUNT=0
@@ -165,9 +165,14 @@ function f_nav_pipe
     while :
     do
         # read button input
-        INP_NAV=$(cat -vet "${LCD_DEV}")
+	#echo "/////////////////////////////"
+	#echo "Reading..."
+        INP_NAV=$(timeout --foreground 3 cat -vet "${LCD_DEV}")
+	#INP_NAV=$(cat -vet "${LCD_DEV}")
+	#echo $INP_NAV
         if [[ -n "${INP_NAV}" ]]
         then
+	    echo "Processing..."
             # filter/replace input stream
             INP_NAV="${INP_NAV//[!A-B]/}"
             INP_NAV="${INP_NAV//A/UP }"
@@ -175,6 +180,7 @@ function f_nav_pipe
             # send only vaild input to nav pipe/custom file descriptor
             if [[ -n "${INP_NAV}" ]]
             then
+		echo "Input Detected!"
                 NAV_RT=0
                 printf "%s\n" "${INP_NAV}" >&${INP_FD}
                 printf "%s\n" "" >&${INP_FD}
@@ -253,7 +259,19 @@ trap "f_trap_exit" 0 1 2 3 10 11 15
 
 # prepare serial communication (send & receive)
 #
+#"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
 "${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cread cbreak time ${TTY_TIMEOUT} min ${TTY_MIN}
+"${TTY_PRG}" -f "${LCD_DEV}" ${LCD_BAUD} cs8 -cstopb -parenb
 if (( $? == 0 ))
 then
     LOG_MSG[0]="Info  => serial port initialized!"
@@ -290,6 +308,7 @@ exec {INP_FD}<> "${INP_PIPE}"
 
 # start nav pipe function in background and get PID
 #
+
 f_nav_pipe &
 BG_PID=$!
 

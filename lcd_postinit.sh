@@ -25,3 +25,8 @@ sleep 30
 # turn off display
 printf '\115\136\000' > /dev/cuau1
 
+# run service
+(/usr/local/bin/lcd/lcd-control.ksh) >/dev/null 2>&1 &
+
+
+
