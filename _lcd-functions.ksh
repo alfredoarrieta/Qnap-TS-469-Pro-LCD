@@ -70,8 +70,7 @@ IP2_NUMBER=0
 for IP2_PARTIAL in $IP2; do
 	echo "IP2: $IP2_PARTIAL"
 	IP2_LAST_DIGIT=(${IP2_PARTIAL//./ })
-	if [[ $IP1_RESULT != *"${IP2_LAST_DIGIT[3]}"* ]]
-	then
+	if [[ $IP1_RESULT != *" ${IP2_LAST_DIGIT[3]}|"* && $IP1_RESULT != *"|${IP2_LAST_DIGIT[3]}|"* ]] then
 		IP2_RESULT="${IP2_RESULT}${IP2_LAST_DIGIT[3]}|"
 		((IP2_NUMBER++))
 	else
@@ -119,6 +118,7 @@ ROW[${INDEX}]="${KERNEL}"
 # detect which is installed and how many pools are present
 #-------------------------------------------------------------------------------
 #
+echo "////////////////////////////////////////////"
 ZFS_POOLS=0
 R_DEVICES=""
 
@@ -135,6 +135,7 @@ fi
 #-------------------------------------------------------------------------------
 #
 # get current index count as start value
+echo "////////////////////////////////////////////"
 if (( $ZFS_POOLS > 0 ))
 then
 	INDEX=${#ROW[@]}
@@ -145,17 +146,14 @@ then
 	POOL_NAME_CUTTED=${POOL_NAME%$'\n'*}
 	echo "pool name: ${POOL_NAME_CUTTED}"
 	FREE=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 4)
-	echo "free: ${FREE[0]}"
 	HEALTH=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 10)
-	echo "health: ${HEALTH[0]}"
 	CAP=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 8)
-	echo "capacity: ${CAP[0]}"
 	SIZE=$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 2)
-	echo "size: ${SIZE[0]}"
+	echo "free: ${FREE[0]} health: ${HEALTH[0]} size: ${SIZE[0]} capacity: ${CAP[0]}"
 	# result
 	ROW[${INDEX}]="$(zpool list -H "${POOL_NAME_CUTTED}" | cut -f 1)"
 	(( INDEX ++ ))
-	ROW[${INDEX}]="${FREE}/${SIZE}"
+	ROW[${INDEX}]="${FREE}/${SIZE} ${CAP}"
 	(( INDEX ++ ))
 	R_DEVICES=$(ls -l /dev/ada[0-9] | awk '{print$9}')
 	#echo "devices: ${R_DEVICES}"
@@ -167,6 +165,7 @@ fi
 #-------------------------------------------------------------------------------
 #
 # get current index count as start value
+echo "////////////////////////////////////////////"
 if [ "$R_DEVICES" != "" ]; then
 	INDEX=${#ROW[@]}
 	# query
